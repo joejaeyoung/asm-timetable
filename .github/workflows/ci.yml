@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     types: [closed]
     branches:
@@ -9,7 +12,7 @@ on:
 jobs:
   backend-test:
     name: Backend – Test (Java 17)
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -36,7 +39,7 @@ jobs:
 
   frontend-build:
     name: Frontend – Build (Node 20)
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     defaults:
       run:

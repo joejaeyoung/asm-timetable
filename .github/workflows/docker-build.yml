@@ -1,6 +1,9 @@
 name: Docker Build & Push
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     types: [closed]
     branches:
@@ -10,7 +13,7 @@ jobs:
   build-backend:
     name: Build & Push Backend
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
 
     steps:
       - name: Checkout
@@ -40,7 +43,7 @@ jobs:
   build-frontend:
     name: Build & Push Frontend
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
 
     steps:
       - name: Checkout
