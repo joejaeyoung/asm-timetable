@@ -105,6 +105,35 @@ export default function RegisterPage() {
             </p>
           </div>
         </div>
+
+        {/* Info */}
+        <div className="mt-6 text-center space-y-1.5">
+          <p className="text-xs text-gray-400">
+            중복 계정 생성이 가능하지만, 꼭 필요할 경우만 여러 계정 사용 부탁드립니다.
+          </p>
+          <p className="text-xs text-gray-400">개발자 : 조재영</p>
+          <div className="flex items-center justify-center gap-3 text-xs">
+            <a
+              href="https://github.com/joejaeyoung"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-500"
+            >
+              GitHub
+            </a>
+            <span className="text-gray-300">|</span>
+            <a
+              href="https://www.linkedin.com/in/jaeyoung-jo-a18447306/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-500"
+            >
+              LinkedIn
+            </a>
+            <span className="text-gray-300">|</span>
+            <span className="text-gray-400">문의 : Webex</span>
+          </div>
+        </div>
       </div>
     </div>
   );
