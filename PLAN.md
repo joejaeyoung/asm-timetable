@@ -3,6 +3,7 @@
 ## 현재 상태
 - Phase 1–6 완료: 프론트엔드 전체 + 백엔드 Spring Boot 구현
 - DB 연결 완료 (Docker MySQL 8.4 + appuser 정상 작동)
+- CI/CD 연결 중:
 
 ---
 
