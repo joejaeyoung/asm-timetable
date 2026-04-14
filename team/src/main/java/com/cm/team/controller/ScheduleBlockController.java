@@ -67,9 +67,10 @@ public class ScheduleBlockController {
     public void delete(
             @PathVariable String id,
             @RequestBody(required = false) DeleteScheduleBlockRequest req) {
-        DeleteScheduleBlockRequest.DeleteScope scope = (req != null && req.getScope() != null)
-                ? req.getScope()
-                : DeleteScheduleBlockRequest.DeleteScope.THIS_ONLY;
-        scheduleBlockService.deleteWithScope(id, scope);
+        if (req != null && req.getScope() != null) {
+            scheduleBlockService.deleteWithScope(id, req.getScope());
+        } else {
+            scheduleBlockService.delete(id);
+        }
     }
 }
