@@ -1,6 +1,16 @@
 import { create } from 'zustand';
-import type { ScheduleBlock } from '@/types';
+import type { ScheduleBlock, RecurrenceRule } from '@/types';
 import { api } from '@/lib/api';
+
+interface CreateRecurringPayload {
+  userId: string;
+  teamId: string;
+  startDate: string;
+  startTime: string;
+  endTime: string;
+  description?: string;
+  rule: RecurrenceRule;
+}
 
 interface ScheduleStore {
   blocks: ScheduleBlock[];
@@ -8,7 +18,8 @@ interface ScheduleStore {
   fetchByWeek: (teamId: string, weekId: string) => Promise<void>;
   /** 로컬 ID(local-)로 생성된 블록을 API에 저장 후 실제 ID로 교체 */
   upsertBlock: (block: ScheduleBlock) => Promise<void>;
-  removeBlock: (id: string) => Promise<void>;
+  createRecurringBlocks: (payload: CreateRecurringPayload) => Promise<void>;
+  removeBlock: (id: string, scope?: 'THIS_ONLY' | 'THIS_AND_AFTER' | 'ALL') => Promise<void>;
 }
 
 export const useScheduleStore = create<ScheduleStore>((set, get) => ({
@@ -67,16 +78,53 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     }
   },
 
-  removeBlock: async (id: string) => {
-    // 낙관적 삭제
+  createRecurringBlocks: async (payload: CreateRecurringPayload) => {
+    const saved = await api.createRecurringBlocks({
+      userId: payload.userId,
+      teamId: payload.teamId,
+      date: payload.startDate,
+      startDate: payload.startDate,
+      startTime: payload.startTime,
+      endTime: payload.endTime,
+      description: payload.description,
+      daysOfWeek: payload.rule.daysOfWeek,
+      endCondition: payload.rule.endCondition,
+      endDate: payload.rule.endDate,
+      occurrences: payload.rule.occurrences,
+    });
+    set((state) => ({ blocks: [...state.blocks, ...saved] }));
+  },
+
+  removeBlock: async (id: string, scope: 'THIS_ONLY' | 'THIS_AND_AFTER' | 'ALL' = 'THIS_ONLY') => {
     const prev = get().blocks;
-    set((state) => ({ blocks: state.blocks.filter((b) => b.id !== id) }));
+    const block = prev.find((b) => b.id === id);
+    const groupId = block?.recurrenceGroupId;
+
+    // 낙관적 삭제: scope에 따라 제거할 블록 결정
+    let idsToRemove: Set<string>;
+    if (!groupId || scope === 'THIS_ONLY') {
+      idsToRemove = new Set([id]);
+    } else if (scope === 'ALL') {
+      idsToRemove = new Set(prev.filter((b) => b.recurrenceGroupId === groupId).map((b) => b.id));
+    } else {
+      const targetIndex = block?.recurrenceIndex ?? 0;
+      idsToRemove = new Set(
+        prev
+          .filter((b) => b.recurrenceGroupId === groupId && (b.recurrenceIndex ?? 0) >= targetIndex)
+          .map((b) => b.id),
+      );
+    }
+
+    set((state) => ({ blocks: state.blocks.filter((b) => !idsToRemove.has(b.id)) }));
     try {
       if (!id.startsWith('local-')) {
-        await api.deleteBlock(id);
+        if (scope === 'THIS_ONLY' || !groupId) {
+          await api.deleteBlock(id);
+        } else {
+          await api.deleteBlockWithScope(id, scope);
+        }
       }
     } catch (e) {
-      // 실패 시 롤백
       set({ blocks: prev });
       console.error('블록 삭제 실패:', e);
       throw e;

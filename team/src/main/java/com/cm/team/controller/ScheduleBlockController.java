@@ -1,6 +1,8 @@
 package com.cm.team.controller;
 
+import com.cm.team.dto.request.CreateRecurringScheduleBlockRequest;
 import com.cm.team.dto.request.CreateScheduleBlockRequest;
+import com.cm.team.dto.request.DeleteScheduleBlockRequest;
 import com.cm.team.dto.request.UpdateScheduleBlockRequest;
 import com.cm.team.dto.response.ScheduleBlockResponse;
 import com.cm.team.service.ScheduleBlockService;
@@ -51,10 +53,23 @@ public class ScheduleBlockController {
         return scheduleBlockService.update(id, req);
     }
 
+    /** POST /api/schedule/recurring */
+    @PostMapping("/recurring")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<ScheduleBlockResponse> createRecurring(
+            @Valid @RequestBody CreateRecurringScheduleBlockRequest req) {
+        return scheduleBlockService.createRecurring(req);
+    }
+
     /** DELETE /api/schedule/{id} */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable String id) {
-        scheduleBlockService.delete(id);
+    public void delete(
+            @PathVariable String id,
+            @RequestBody(required = false) DeleteScheduleBlockRequest req) {
+        DeleteScheduleBlockRequest.DeleteScope scope = (req != null && req.getScope() != null)
+                ? req.getScope()
+                : DeleteScheduleBlockRequest.DeleteScope.THIS_ONLY;
+        scheduleBlockService.deleteWithScope(id, scope);
     }
 }

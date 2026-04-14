@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useTeamStore } from '@/store/teamStore';
 import { useScheduleStore } from '@/store/scheduleStore';
+import RecurringDeleteModal from './RecurringDeleteModal';
 import type { ScheduleBlock } from '@/types';
 
 const SLOT_HEIGHT = 32;
@@ -37,6 +38,7 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
 
   const [showTooltip, setShowTooltip] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [showRecurringDeleteModal, setShowRecurringDeleteModal] = useState(false);
 
   const user = allUsers.find((u) => u.id === block.userId);
   const color = user?.color ?? '#ccc';
@@ -59,9 +61,18 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
     setContextMenu({ x: e.clientX, y: e.clientY });
   }
 
-  async function handleDelete() {
-    await removeBlock(block.id);
+  function handleDelete() {
     setContextMenu(null);
+    if (block.recurrenceGroupId) {
+      setShowRecurringDeleteModal(true);
+    } else {
+      void removeBlock(block.id);
+    }
+  }
+
+  async function handleRecurringDelete(scope: 'THIS_ONLY' | 'THIS_AND_AFTER' | 'ALL') {
+    setShowRecurringDeleteModal(false);
+    await removeBlock(block.id, scope);
   }
 
   return (
@@ -124,6 +135,15 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
             </div>
           )}
         </div>
+      )}
+
+      {/* 반복 삭제 범위 선택 모달 */}
+      {showRecurringDeleteModal && createPortal(
+        <RecurringDeleteModal
+          onSelect={handleRecurringDelete}
+          onCancel={() => setShowRecurringDeleteModal(false)}
+        />,
+        document.body,
       )}
 
       {/* Context menu — portal to document.body */}

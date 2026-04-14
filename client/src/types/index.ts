@@ -28,6 +28,18 @@ export interface ScheduleBlock {
   startTime: string;   // 'HH:MM'
   endTime: string;     // 'HH:MM'
   description?: string;
+  recurrenceGroupId?: string | null;
+  recurrenceIndex?: number;
+}
+
+// ISO 요일: 1=월, 2=화, ..., 7=일
+export type RecurrenceDayOfWeek = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+export interface RecurrenceRule {
+  daysOfWeek: RecurrenceDayOfWeek[];
+  endCondition: 'date' | 'count';
+  endDate?: string;      // 'YYYY-MM-DD'
+  occurrences?: number;  // 2–52
 }
 
 export interface TimeSlot {
