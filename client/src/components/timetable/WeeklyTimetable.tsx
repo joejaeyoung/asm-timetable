@@ -6,8 +6,10 @@ import { snapToSlot, useDrag } from '@/hooks/useDrag';
 import { useScheduleByWeek } from '@/hooks/useSchedule';
 import { useAuthStore } from '@/store/authStore';
 import { useScheduleStore } from '@/store/scheduleStore';
+import { useTeamStore } from '@/store/teamStore';
 import DragBlock from './DragBlock';
 import DescriptionModal from './DescriptionModal';
+import MemberFilterDropdown from './MemberFilterDropdown';
 import AvailabilityList from '@/components/availability/AvailabilityList';
 import type { ScheduleBlock } from '@/types';
 
@@ -55,10 +57,16 @@ export default function WeeklyTimetable() {
 
   const currentUser = useAuthStore((s) => s.currentUser);
   const upsertBlock = useScheduleStore((s) => s.upsertBlock);
+  const getTeamMembers = useTeamStore((s) => s.getTeamMembers);
 
   const effectiveTeamId = teamId ?? '';
   const effectiveWeekId = weekId ?? weekIdFromDate(new Date());
   const monday = mondayOfWeekId(effectiveWeekId);
+
+  const teamMembers = getTeamMembers(effectiveTeamId);
+  const [visibleMemberIds, setVisibleMemberIds] = useState<Set<string>>(
+    () => new Set(teamMembers.map((m) => m.id)),
+  );
   const days: Date[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
@@ -133,18 +141,27 @@ export default function WeeklyTimetable() {
         <h1 className="text-lg font-semibold text-gray-800">
           {formatWeekLabel(effectiveWeekId, monday)}
         </h1>
-        {/* 현재 사용자 표시 (선택 불가 - 로그인 계정 고정) */}
-        {currentUser && (
-          <div className="flex items-center gap-2">
-            <span
-              className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-semibold"
-              style={{ backgroundColor: currentUser.color }}
-            >
-              {currentUser.name[0]}
-            </span>
-            <span className="text-sm text-gray-600">{currentUser.name}</span>
-          </div>
-        )}
+        {/* 현재 사용자 표시 + 팀원 필터 */}
+        <div className="flex items-center gap-3">
+          {teamMembers.length > 1 && (
+            <MemberFilterDropdown
+              members={teamMembers}
+              visibleIds={visibleMemberIds}
+              onChange={setVisibleMemberIds}
+            />
+          )}
+          {currentUser && (
+            <div className="flex items-center gap-2">
+              <span
+                className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-semibold"
+                style={{ backgroundColor: currentUser.color }}
+              >
+                {currentUser.name[0]}
+              </span>
+              <span className="text-sm text-gray-600">{currentUser.name}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Availability row */}
@@ -152,7 +169,7 @@ export default function WeeklyTimetable() {
         <div className="w-14 shrink-0" />
         {days.map((day, i) => (
           <div key={i} className="flex-1 border border-gray-100 rounded">
-            <AvailabilityList date={formatDateStr(day)} />
+            <AvailabilityList date={formatDateStr(day)} memberIds={visibleMemberIds} />
           </div>
         ))}
       </div>
@@ -242,13 +259,15 @@ export default function WeeklyTimetable() {
 
           {/* DragBlocks */}
           <div className="absolute inset-0 pointer-events-none">
-            {blocks.map((block) => {
-              const colIndex = days.findIndex((d) => formatDateStr(d) === block.date);
-              if (colIndex < 0) return null;
-              return (
-                <DragBlock key={block.id} block={block} colIndex={colIndex} nightFolded={nightFolded} />
-              );
-            })}
+            {blocks
+              .filter((block) => visibleMemberIds.has(block.userId))
+              .map((block) => {
+                const colIndex = days.findIndex((d) => formatDateStr(d) === block.date);
+                if (colIndex < 0) return null;
+                return (
+                  <DragBlock key={block.id} block={block} colIndex={colIndex} nightFolded={nightFolded} />
+                );
+              })}
           </div>
 
           {/* Interactive slot cells */}
