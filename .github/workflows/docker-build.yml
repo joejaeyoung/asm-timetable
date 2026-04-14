@@ -65,7 +65,7 @@ jobs:
           file: ./client/Dockerfile
           push: true
           build-args: |
-            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_API_URL=
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/asm-timetable-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/asm-timetable-frontend:${{ github.sha }}
