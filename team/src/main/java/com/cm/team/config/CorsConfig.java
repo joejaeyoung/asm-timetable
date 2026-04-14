@@ -13,8 +13,15 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // HTTP → HTTPS 변형도 허용 (프로덕션 HTTPS 대응)
+        String httpsVariant = frontendUrl.replace("http://", "https://");
+
         registry.addMapping("/api/**")
-                .allowedOriginPatterns("http://localhost:*", frontendUrl)
+                .allowedOriginPatterns(
+                        "http://localhost:*",   // 개발: Vite 포트 무관하게 허용
+                        frontendUrl,            // 프로덕션 HTTP
+                        httpsVariant            // 프로덕션 HTTPS
+                )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .maxAge(3600);
