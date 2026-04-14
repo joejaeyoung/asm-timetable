@@ -1,6 +1,8 @@
 import type { User, Team, ScheduleBlock, RecurrenceRule } from '@/types';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+// 프로덕션: VITE_API_URL='' → 상대경로 → Nginx 프록시 경유 (same-origin, CORS 없음)
+// 로컬 dev: VITE_API_URL 미설정 → undefined → 'http://localhost:8080' 폴백
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
 
 // ── Auth user ID (set on login, cleared on logout) ────────────────────────────
 let _authUserId: string | null = null;
