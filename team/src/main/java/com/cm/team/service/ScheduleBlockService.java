@@ -77,7 +77,9 @@ public class ScheduleBlockService {
         LocalTime startTime = LocalTime.parse(req.getStartTime());
         LocalTime endTime = LocalTime.parse(req.getEndTime());
 
-        if (!endTime.isAfter(startTime)) {
+        // endTime "00:00" means midnight (end-of-day = 24:00); always valid as end time
+        boolean isMidnightEnd = LocalTime.MIDNIGHT.equals(endTime);
+        if (!isMidnightEnd && !endTime.isAfter(startTime)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "종료 시간은 시작 시간 이후여야 합니다.");
         }
 
@@ -120,7 +122,9 @@ public class ScheduleBlockService {
         LocalTime startTime = LocalTime.parse(req.getStartTime());
         LocalTime endTime = LocalTime.parse(req.getEndTime());
 
-        if (!endTime.isAfter(startTime)) {
+        // endTime "00:00" means midnight (end-of-day = 24:00); always valid as end time
+        boolean isMidnightEnd = LocalTime.MIDNIGHT.equals(endTime);
+        if (!isMidnightEnd && !endTime.isAfter(startTime)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "종료 시간은 시작 시간 이후여야 합니다.");
         }
 

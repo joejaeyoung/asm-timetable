@@ -26,6 +26,20 @@ export interface TeamMemberApiResponse {
   joinedAt: string;
 }
 
+// ── Midnight normalization ────────────────────────────────────────────────────
+// "24:00" is used internally in the frontend (correct string ordering + rendering)
+// but Java LocalTime only supports 00:00–23:59, so we convert at API boundaries.
+
+/** Frontend→Backend: "24:00" → "00:00" */
+function denormalizeTime(t: string): string {
+  return t === '24:00' ? '00:00' : t;
+}
+
+/** Backend→Frontend: endTime "00:00" → "24:00" (means end-of-day) */
+function normalizeBlock(b: ScheduleBlock): ScheduleBlock {
+  return b.endTime === '00:00' ? { ...b, endTime: '24:00' } : b;
+}
+
 // ── Request helper ────────────────────────────────────────────────────────────
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
@@ -88,22 +102,27 @@ export const api = {
 
   // ── Schedule ──────────────────────────────────────────────────────────────
   getScheduleByMonth: (teamId: string, month: string) =>
-    request<ScheduleBlock[]>(`/api/schedule?teamId=${encodeURIComponent(teamId)}&month=${month}`),
+    request<ScheduleBlock[]>(`/api/schedule?teamId=${encodeURIComponent(teamId)}&month=${month}`)
+      .then((blocks) => blocks.map(normalizeBlock)),
 
   getScheduleByWeek: (teamId: string, weekId: string) =>
-    request<ScheduleBlock[]>(`/api/schedule?teamId=${encodeURIComponent(teamId)}&week=${weekId}`),
+    request<ScheduleBlock[]>(`/api/schedule?teamId=${encodeURIComponent(teamId)}&week=${weekId}`)
+      .then((blocks) => blocks.map(normalizeBlock)),
 
   createBlock: (body: Omit<ScheduleBlock, 'id'>) =>
     request<ScheduleBlock>('/api/schedule', {
       method: 'POST',
-      body: JSON.stringify(body),
-    }),
+      body: JSON.stringify({ ...body, endTime: denormalizeTime(body.endTime) }),
+    }).then(normalizeBlock),
 
   updateBlock: (id: string, body: Partial<Omit<ScheduleBlock, 'id' | 'userId' | 'teamId'>>) =>
     request<ScheduleBlock>(`/api/schedule/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(body),
-    }),
+      body: JSON.stringify({
+        ...body,
+        ...(body.endTime ? { endTime: denormalizeTime(body.endTime) } : {}),
+      }),
+    }).then(normalizeBlock),
 
   deleteBlock: (id: string) =>
     request<void>(`/api/schedule/${id}`, { method: 'DELETE' }),
@@ -111,8 +130,8 @@ export const api = {
   createRecurringBlocks: (body: Omit<ScheduleBlock, 'id' | 'recurrenceGroupId' | 'recurrenceIndex'> & RecurrenceRule & { startDate: string }) =>
     request<ScheduleBlock[]>('/api/schedule/recurring', {
       method: 'POST',
-      body: JSON.stringify(body),
-    }),
+      body: JSON.stringify({ ...body, endTime: denormalizeTime(body.endTime) }),
+    }).then((blocks) => blocks.map(normalizeBlock)),
 
   deleteBlockWithScope: (id: string, scope: 'THIS_ONLY' | 'THIS_AND_AFTER' | 'ALL') =>
     request<void>(`/api/schedule/${id}`, {
