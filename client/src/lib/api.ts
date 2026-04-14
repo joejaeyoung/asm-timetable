@@ -1,4 +1,4 @@
-import type { User, Team, ScheduleBlock } from '@/types';
+import type { User, Team, ScheduleBlock, RecurrenceRule } from '@/types';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -107,4 +107,16 @@ export const api = {
 
   deleteBlock: (id: string) =>
     request<void>(`/api/schedule/${id}`, { method: 'DELETE' }),
+
+  createRecurringBlocks: (body: Omit<ScheduleBlock, 'id' | 'recurrenceGroupId' | 'recurrenceIndex'> & RecurrenceRule & { startDate: string }) =>
+    request<ScheduleBlock[]>('/api/schedule/recurring', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  deleteBlockWithScope: (id: string, scope: 'THIS_ONLY' | 'THIS_AND_AFTER' | 'ALL') =>
+    request<void>(`/api/schedule/${id}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ scope }),
+    }),
 };

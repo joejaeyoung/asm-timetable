@@ -1,84 +1,76 @@
+@RULE.md
+@ERROR.md
 # Schedule Manager — 남은 작업 계획
 
-## 현재 상태
-- Phase 1–6 완료: 프론트엔드 전체 + 백엔드 Spring Boot 구현
-- DB 연결 완료 (Docker MySQL 8.4 + appuser 정상 작동)
-- CI/CD 연결 중 거의 완성
+1. 일정 생성시 반복 기능 추가
+	1. 주차별 반복 등 (요일 지정 가능)
 
 ---
 
-## Step 1: DB 연결 설정 수정 (버그 2건)
+# 신기능 구현 계획
 
-### 1-1. application.properties — DockerCompose 연결정보 오버라이드 차단
-**파일:** `team/src/main/resources/application.properties`
+브랜치 전략: `feat/기능명` 브랜치를 기능별로 따로 생성 (RULE.md 기준)
+**구현 순서**: feat/member-filter → feat/recurring-schedule
 
-**문제:** Spring Boot Docker Compose 통합이 `spring.datasource.url`을 `allowPublicKeyRetrieval` 없는 URL로 덮어씀 → caching_sha2_password 인증 실패  
-**해결:** DockerCompose 서비스 연결 auto-configuration 제외
+---
 
-```properties
-spring.autoconfigure.exclude=\
-  org.springframework.boot.docker.compose.service.connection.DockerComposeServiceConnectionAutoConfiguration
+## Feature 2: 일정 반복 기능 (feat/recurring-schedule)
+
+**아키텍처**: 서버가 반복 블록을 개별 ScheduleBlock 행으로 생성. 공통 `recurrenceGroupId`(UUID)로 연결.
+
+### 타입 추가 (`client/src/types/index.ts`)
+```typescript
+// ScheduleBlock에 추가
+recurrenceGroupId?: string | null;
+recurrenceIndex?: number;  // THIS_AND_AFTER 삭제용 순서 인덱스
+
+export type RecurrenceDayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=월...6=일
+export interface RecurrenceRule {
+  daysOfWeek: RecurrenceDayOfWeek[];
+  endCondition: 'date' | 'count';
+  endDate?: string;      // 'YYYY-MM-DD'
+  occurrences?: number;  // 2–52
+}
 ```
 
-### 1-2. build.gradle — 중복 MySQL 드라이버 제거
-**파일:** `team/build.gradle`
+### 백엔드 변경
+| 파일 | 변경 내용 |
+|------|----------|
+| `server/.../entity/ScheduleBlock.java` | `recurrenceGroupId` (VARCHAR 36), `recurrenceIndex` (INT) 추가 |
+| DB Migration | `ALTER TABLE` + 인덱스 |
+| `server/.../dto/response/ScheduleBlockResponse.java` | `recurrenceGroupId` 필드 추가 |
+| `server/.../dto/request/CreateRecurringScheduleBlockRequest.java` | **신규** |
+| `server/.../dto/request/DeleteScheduleBlockRequest.java` | **신규** — scope: `THIS_ONLY \| THIS_AND_AFTER \| ALL` |
+| `server/.../repository/ScheduleBlockRepository.java` | `deleteByRecurrenceGroupId`, `deleteByGroupIdAndIndexGte` 추가 |
+| `server/.../service/ScheduleBlockService.java` | `createRecurring()`, `deleteWithScope()` 추가 |
+| `server/.../controller/ScheduleBlockController.java` | `POST /api/schedule/recurring` 추가, `DELETE /{id}` body 지원 |
 
-**문제:** 구 artifact `mysql:mysql-connector-java:8.0.33` 와 신 artifact `com.mysql:mysql-connector-j` 동시 선언  
-**해결:** 구 artifact 제거, 신 artifact 유지
+새 API:
+- `POST /api/schedule/recurring` → `List<ScheduleBlockResponse>` (201)
+- `DELETE /api/schedule/{id}` body: `{ scope: "THIS_ONLY"|"THIS_AND_AFTER"|"ALL" }`
 
----
+### 프론트엔드 변경
+| 파일 | 변경 내용 |
+|------|----------|
+| `client/src/lib/api.ts` | `createRecurringBlocks()`, `deleteBlockWithScope()` 추가 |
+| `client/src/store/scheduleStore.ts` | `createRecurringBlocks` action, `removeBlock` scope 파라미터 추가 |
+| `client/src/components/timetable/DescriptionModal.tsx` | 반복 설정 UI 섹션 추가 |
+| `client/src/components/timetable/RecurringDeleteModal.tsx` | **신규** — "이 항목만 / 이후 모두 / 전체" 3선택 모달 |
+| `client/src/components/timetable/DragBlock.tsx` | 반복 블록 우클릭 시 RecurringDeleteModal 표시 |
+| `client/src/components/timetable/WeeklyTimetable.tsx` | `handleModalConfirm` 반복/단건 분기 처리 |
 
-## Step 2: 백엔드 단위 테스트
-
-### 테스트 전략
-- **Service 테스트**: Mockito로 Repository 모킹 (DB 불필요)
-- **Controller 테스트**: `@WebMvcTest` + MockMvc + `@MockitoBean`
-- H2 인메모리 DB를 테스트 환경에서 사용
-
-### 추가 설정
-- `build.gradle`: `testRuntimeOnly 'com.h2database:h2'` 추가
-- `src/test/resources/application-test.properties`:
-  ```properties
-  spring.docker.compose.enabled=false
-  spring.datasource.url=jdbc:h2:mem:testdb
-  spring.datasource.driver-class-name=org.h2.Driver
-  spring.jpa.hibernate.ddl-auto=create-drop
-  ```
-
-### 테스트 파일 (신규 생성)
-
-| 파일 | 커버리지 |
-|------|---------|
-| `UserServiceTest` | login 성공/401, register 성공/409 |
-| `TeamServiceTest` | getMyTeams, createTeam, deleteTeam(403), inviteMember(403/404/409), removeMember(403/400/404) |
-| `ScheduleBlockServiceTest` | getByMonth, getByWeek(ISO주차 파싱), create(시간검증), update(부분수정), delete |
-| `AuthControllerTest` | POST /login 200/401/400, POST /register 201/409/400 |
-| `TeamControllerTest` | 모든 팀 엔드포인트 응답코드 |
-| `ScheduleBlockControllerTest` | GET(month/week/파라미터없음400), POST/PUT/DELETE |
+**DescriptionModal 반복 UI** (설명 textarea 아래에 추가)
+1. "매주 반복" 체크박스 토글
+2. (ON 시) 요일 버튼 7개 (월~일) — 현재 요일 기본 선택+비활성
+3. 종료 조건 라디오: "날짜 지정" vs "횟수 지정"
+4. 조건부 입력: `<input type="date">` 또는 숫자 스피너 (2–52)
 
 ---
 
-## Step 3: 프론트엔드 API 연결
-
-### 3-1. `client/src/lib/api.ts`
-axios 인스턴스 생성 + `X-User-Id` 헤더 자동 첨부 인터셉터
-
-### 3-2. 스토어 연결
-
-| 스토어 | 변경 |
-|--------|------|
-| `authStore.ts` | login → `POST /api/auth/login`, register → `POST /api/auth/register` |
-| `teamStore.ts` | 모든 actions → 실제 API 호출 |
-| `scheduleStore.ts` | fetch/create/update/delete → 실제 API 호출 |
-
-### 3-3. 에러 처리
-- 401 → `/login` 리다이렉트
-- 409 → 인라인 에러 메시지
-- 403/404 → 토스트/인라인 에러
-
----
-
-## 검증 순서
-1. `./gradlew bootRun` → Access denied 없이 정상 기동
-2. `./gradlew test` → 전체 테스트 통과
-3. 프론트 `npm run dev` → 로그인 → 팀 생성 → 초대 → 스케줄 등록 E2E
+## Feature 3. 메인 화면 수정
+안내문구 추가
+- 중복 계정 생성이 가능하지만, 꼭 필요할 경우만 여러 계정 사용 부탁드립니다.
+- 개발자 : 조재영
+- 깃허브 링크 : https://github.com/joejaeyoung
+- 링크드인 : https://www.linkedin.com/in/jaeyoung-jo-a18447306/
+- 문의사항 : webex

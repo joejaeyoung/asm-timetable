@@ -49,6 +49,12 @@ public class ScheduleBlock {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "recurrence_group_id", length = 36)
+    private String recurrenceGroupId;
+
+    @Column(name = "recurrence_index")
+    private Integer recurrenceIndex;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

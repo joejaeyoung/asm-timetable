@@ -13,6 +13,8 @@ public class ScheduleBlockResponse {
     private final String startTime;
     private final String endTime;
     private final String description;
+    private final String recurrenceGroupId;
+    private final Integer recurrenceIndex;
 
     public ScheduleBlockResponse(ScheduleBlock block) {
         this.id = block.getId();
@@ -22,5 +24,7 @@ public class ScheduleBlockResponse {
         this.startTime = block.getStartTime().toString();
         this.endTime = block.getEndTime().toString();
         this.description = block.getDescription();
+        this.recurrenceGroupId = block.getRecurrenceGroupId();
+        this.recurrenceIndex = block.getRecurrenceIndex();
     }
 }

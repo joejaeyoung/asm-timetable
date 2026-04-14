@@ -11,7 +11,7 @@ import DragBlock from './DragBlock';
 import DescriptionModal from './DescriptionModal';
 import MemberFilterDropdown from './MemberFilterDropdown';
 import AvailabilityList from '@/components/availability/AvailabilityList';
-import type { ScheduleBlock } from '@/types';
+import type { ScheduleBlock, RecurrenceRule } from '@/types';
 
 const SLOT_HEIGHT = 32;
 const WORK_START = 0;
@@ -57,6 +57,7 @@ export default function WeeklyTimetable() {
 
   const currentUser = useAuthStore((s) => s.currentUser);
   const upsertBlock = useScheduleStore((s) => s.upsertBlock);
+  const createRecurringBlocks = useScheduleStore((s) => s.createRecurringBlocks);
   const getTeamMembers = useTeamStore((s) => s.getTeamMembers);
 
   const effectiveTeamId = teamId ?? '';
@@ -95,16 +96,29 @@ export default function WeeklyTimetable() {
     if (result) setPendingBlock(result);
   }
 
-  async function handleModalConfirm(description: string) {
+  async function handleModalConfirm(description: string, recurrence: RecurrenceRule | null) {
     if (!pendingBlock || !currentUser) return;
-    const newBlock: ScheduleBlock = {
-      id: `local-${Date.now()}`,
-      userId: currentUser.id,
-      teamId: effectiveTeamId,
-      ...pendingBlock,
-      description,
-    };
-    await upsertBlock(newBlock);
+
+    if (recurrence) {
+      await createRecurringBlocks({
+        userId: currentUser.id,
+        teamId: effectiveTeamId,
+        startDate: pendingBlock.date,
+        startTime: pendingBlock.startTime,
+        endTime: pendingBlock.endTime,
+        description,
+        rule: recurrence,
+      });
+    } else {
+      const newBlock: ScheduleBlock = {
+        id: `local-${Date.now()}`,
+        userId: currentUser.id,
+        teamId: effectiveTeamId,
+        ...pendingBlock,
+        description,
+      };
+      await upsertBlock(newBlock);
+    }
     setPendingBlock(null);
   }
 
@@ -297,6 +311,7 @@ export default function WeeklyTimetable() {
           dateLabel={format(new Date(pendingBlock.date), 'M월 d일')}
           startTime={snapToSlot(pendingBlock.startTime)}
           endTime={pendingBlock.endTime}
+          dayOfWeek={new Date(pendingBlock.date).getDay()}
           onConfirm={handleModalConfirm}
           onCancel={() => setPendingBlock(null)}
         />
