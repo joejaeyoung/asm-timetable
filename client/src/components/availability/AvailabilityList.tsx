@@ -2,10 +2,11 @@ import { useAvailability } from '@/hooks/useAvailability';
 
 interface Props {
   date: string; // 'YYYY-MM-DD'
+  memberIds?: Set<string>;
 }
 
-export default function AvailabilityList({ date }: Props) {
-  const slots = useAvailability(date);
+export default function AvailabilityList({ date, memberIds }: Props) {
+  const slots = useAvailability(date, memberIds);
 
   return (
     <div className="px-1 py-2 border-t border-gray-100">

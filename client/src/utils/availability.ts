@@ -17,12 +17,15 @@ function toTimeString(minutes: number): string {
 export function getSharedAvailability(
   blocks: ScheduleBlock[],
   date: string,
+  memberIds?: Set<string>,
 ): TimeSlot[] {
   const workStart = toMinutes(WORK_START);
   const workEnd = toMinutes(WORK_END);
 
-  // 1. Filter blocks for this date
-  const dayBlocks = blocks.filter((b) => b.date === date);
+  // 1. Filter blocks for this date (and optionally by visible member IDs)
+  const dayBlocks = blocks.filter(
+    (b) => b.date === date && (!memberIds || memberIds.has(b.userId)),
+  );
 
   if (dayBlocks.length === 0) {
     return [{ startTime: WORK_START, endTime: WORK_END }];
