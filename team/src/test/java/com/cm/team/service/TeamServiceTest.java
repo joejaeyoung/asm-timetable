@@ -87,7 +87,7 @@ class TeamServiceTest {
     class CreateTeam {
 
         @Test
-        @DisplayName("팀 생성 + owner 멤버십 자동 등록")
+        @DisplayName("팀 생성 + owner 멤버십 + 팀 일정 가상 유저 자동 등록")
         void success() {
             CreateTeamRequest req = mock(CreateTeamRequest.class);
             when(req.getName()).thenReturn("새팀");
@@ -99,6 +99,11 @@ class TeamServiceTest {
                 t.setId("team-new");
                 return t;
             });
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+                User u = inv.getArgument(0);
+                u.setId("virtual-user-id");
+                return u;
+            });
             when(membershipRepository.save(any(TeamMembership.class))).thenAnswer(inv -> inv.getArgument(0));
 
             TeamResponse result = teamService.createTeam("owner-1", req);
@@ -107,6 +112,8 @@ class TeamServiceTest {
             assertThat(result.getName()).isEqualTo("새팀");
             assertThat(result.getOwnerId()).isEqualTo("owner-1");
             verify(membershipRepository).save(argThat(m -> m.getRole() == TeamMembership.Role.owner));
+            verify(membershipRepository).save(argThat(m -> m.getRole() == TeamMembership.Role.member
+                    && m.getUser().isTeamUser()));
         }
 
         @Test
