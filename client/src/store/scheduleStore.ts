@@ -3,7 +3,7 @@ import type { ScheduleBlock, RecurrenceRule } from '@/types';
 import { api } from '@/lib/api';
 
 interface CreateRecurringPayload {
-  userId: string;
+  userId: string | null;  // null = 팀 전체 일정
   teamId: string;
   startDate: string;
   startTime: string;

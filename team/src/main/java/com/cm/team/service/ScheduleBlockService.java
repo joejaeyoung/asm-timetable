@@ -68,8 +68,10 @@ public class ScheduleBlockService {
 
     @Transactional
     public ScheduleBlockResponse create(CreateScheduleBlockRequest req) {
-        User user = userRepository.findById(req.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        User user = req.getUserId() != null
+                ? userRepository.findById(req.getUserId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."))
+                : null;
         Team team = teamRepository.findById(req.getTeamId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "팀을 찾을 수 없습니다."));
 
@@ -114,8 +116,10 @@ public class ScheduleBlockService {
 
     @Transactional
     public List<ScheduleBlockResponse> createRecurring(CreateRecurringScheduleBlockRequest req) {
-        User user = userRepository.findById(req.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        User user = req.getUserId() != null
+                ? userRepository.findById(req.getUserId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."))
+                : null;
         Team team = teamRepository.findById(req.getTeamId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "팀을 찾을 수 없습니다."));
 

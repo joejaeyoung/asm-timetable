@@ -78,7 +78,7 @@ export default function WeeklyTimetable() {
   const { drag, startDrag, moveDrag, endDrag, cancelDrag } = useDrag(currentUser?.id ?? '');
 
   const [pendingBlock, setPendingBlock] = useState<{
-    date: string; startTime: string; endTime: string;
+    date: string; startTime: string; endTime: string; teamConflict: boolean;
   } | null>(null);
 
   function handleMouseDown(date: Date, slotIndex: number) {
@@ -96,12 +96,14 @@ export default function WeeklyTimetable() {
     if (result) setPendingBlock(result);
   }
 
-  async function handleModalConfirm(description: string, recurrence: RecurrenceRule | null) {
+  async function handleModalConfirm(description: string, recurrence: RecurrenceRule | null, isTeamBlock: boolean) {
     if (!pendingBlock || !currentUser) return;
+
+    const userId = isTeamBlock ? null : currentUser.id;
 
     if (recurrence) {
       await createRecurringBlocks({
-        userId: currentUser.id,
+        userId,
         teamId: effectiveTeamId,
         startDate: pendingBlock.date,
         startTime: pendingBlock.startTime,
@@ -112,9 +114,11 @@ export default function WeeklyTimetable() {
     } else {
       const newBlock: ScheduleBlock = {
         id: `local-${Date.now()}`,
-        userId: currentUser.id,
+        userId,
         teamId: effectiveTeamId,
-        ...pendingBlock,
+        date: pendingBlock.date,
+        startTime: pendingBlock.startTime,
+        endTime: pendingBlock.endTime,
         description,
       };
       await upsertBlock(newBlock);
@@ -274,7 +278,7 @@ export default function WeeklyTimetable() {
           {/* DragBlocks */}
           <div className="absolute inset-0 pointer-events-none">
             {blocks
-              .filter((block) => visibleMemberIds.has(block.userId))
+              .filter((block) => block.userId === null || visibleMemberIds.has(block.userId))
               .map((block) => {
                 const colIndex = days.findIndex((d) => formatDateStr(d) === block.date);
                 if (colIndex < 0) return null;
@@ -312,6 +316,7 @@ export default function WeeklyTimetable() {
           startTime={snapToSlot(pendingBlock.startTime)}
           endTime={pendingBlock.endTime}
           dayOfWeek={new Date(pendingBlock.date).getDay()}
+          hasTeamConflict={pendingBlock.teamConflict}
           onConfirm={handleModalConfirm}
           onCancel={() => setPendingBlock(null)}
         />

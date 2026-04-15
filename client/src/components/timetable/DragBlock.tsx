@@ -40,9 +40,10 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [showRecurringDeleteModal, setShowRecurringDeleteModal] = useState(false);
 
-  const user = allUsers.find((u) => u.id === block.userId);
-  const color = user?.color ?? '#ccc';
-  const isOwner = currentUser?.id === block.userId;
+  const isTeamBlock = block.userId === null;
+  const user = isTeamBlock ? null : allUsers.find((u) => u.id === block.userId);
+  const color = isTeamBlock ? '#9ca3af' : (user?.color ?? '#ccc');
+  const canDelete = isTeamBlock || currentUser?.id === block.userId;
 
   const startSlot = timeToSlot(block.startTime);
   const endSlot = timeToSlot(block.endTime);
@@ -58,7 +59,7 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
   const blockZIndex = 10 + Math.max(0, 48 - durationSlots);
 
   function handleContextMenu(e: React.MouseEvent) {
-    if (!isOwner) return;
+    if (!canDelete) return;
     e.preventDefault();
     e.stopPropagation();
     setShowTooltip(false);
@@ -95,7 +96,7 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
           zIndex: blockZIndex,
         }}
       >
-        <span className="truncate block leading-[20px]">{user?.name ?? '?'}</span>
+        <span className="truncate block leading-[20px]">{isTeamBlock ? '🏷 팀' : (user?.name ?? '?')}</span>
         {block.description && (() => {
           const NAME_H = 20;
           const LINE_H = 14;
@@ -124,19 +125,19 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
           height,
           left: `calc(${colIndex} * (100% / 7) + 1px)`,
           width: `calc(100% / 7 - 2px)`,
-          cursor: isOwner ? 'context-menu' : 'default',
+          cursor: canDelete ? 'context-menu' : 'default',
           zIndex: blockZIndex + 10,
         }}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
-        onContextMenu={isOwner ? handleContextMenu : undefined}
+        onContextMenu={canDelete ? handleContextMenu : undefined}
       >
         {showTooltip && !contextMenu && (
           <div className="absolute z-30 left-full ml-1 top-0 w-44 bg-gray-800 text-white text-xs rounded p-2 shadow-lg pointer-events-none">
             <div className="font-semibold">{user?.name}</div>
             <div className="opacity-75">{block.startTime} – {block.endTime}</div>
             {block.description && <div className="mt-1 opacity-90">{block.description}</div>}
-            {isOwner && <div className="mt-1 opacity-50 text-[10px]">우클릭으로 삭제</div>}
+            {canDelete && <div className="mt-1 opacity-50 text-[10px]">우클릭으로 삭제</div>}
           </div>
         )}
       </div>
