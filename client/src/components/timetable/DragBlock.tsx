@@ -155,13 +155,13 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
       {contextMenu && createPortal(
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[70]"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={() => setContextMenu(null)}
             onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
           />
           <div
-            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[120px]"
+            className="fixed z-[80] bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[120px]"
             style={{ top: contextMenu.y, left: contextMenu.x }}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
