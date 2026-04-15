@@ -111,31 +111,29 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
         })()}
       </div>
 
-      {/* Interaction overlay — only for owner: hover tooltip + right-click delete */}
-      {isOwner && (
-        <div
-          className="absolute z-20 pointer-events-auto"
-          style={{
-            top: topY,
-            height,
-            left: `calc(${colIndex} * (100% / 7) + 1px)`,
-            width: `calc(100% / 7 - 2px)`,
-            cursor: 'context-menu',
-          }}
-          onMouseEnter={() => setShowTooltip(true)}
-          onMouseLeave={() => setShowTooltip(false)}
-          onContextMenu={handleContextMenu}
-        >
-          {showTooltip && !contextMenu && (
-            <div className="absolute z-30 left-full ml-1 top-0 w-44 bg-gray-800 text-white text-xs rounded p-2 shadow-lg pointer-events-none">
-              <div className="font-semibold">{user?.name}</div>
-              <div className="opacity-75">{block.startTime} – {block.endTime}</div>
-              {block.description && <div className="mt-1 opacity-90">{block.description}</div>}
-              <div className="mt-1 opacity-50 text-[10px]">우클릭으로 삭제</div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Interaction overlay — hover tooltip for all blocks, right-click delete for owner only */}
+      <div
+        className="absolute z-20 pointer-events-auto"
+        style={{
+          top: topY,
+          height,
+          left: `calc(${colIndex} * (100% / 7) + 1px)`,
+          width: `calc(100% / 7 - 2px)`,
+          cursor: isOwner ? 'context-menu' : 'default',
+        }}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        onContextMenu={isOwner ? handleContextMenu : undefined}
+      >
+        {showTooltip && !contextMenu && (
+          <div className="absolute z-30 left-full ml-1 top-0 w-44 bg-gray-800 text-white text-xs rounded p-2 shadow-lg pointer-events-none">
+            <div className="font-semibold">{user?.name}</div>
+            <div className="opacity-75">{block.startTime} – {block.endTime}</div>
+            {block.description && <div className="mt-1 opacity-90">{block.description}</div>}
+            {isOwner && <div className="mt-1 opacity-50 text-[10px]">우클릭으로 삭제</div>}
+          </div>
+        )}
+      </div>
 
       {/* 반복 삭제 범위 선택 모달 */}
       {showRecurringDeleteModal && createPortal(
