@@ -22,7 +22,7 @@ export interface TeamMembership {
 
 export interface ScheduleBlock {
   id: string;
-  userId: string;      // 블록 소유자 (구 memberId)
+  userId: string | null;  // null = 팀 전체 일정
   teamId: string;
   date: string;        // 'YYYY-MM-DD'
   startTime: string;   // 'HH:MM'

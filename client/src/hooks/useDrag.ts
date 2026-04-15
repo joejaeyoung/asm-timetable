@@ -42,7 +42,7 @@ export function useDrag(userId: string) {
     setDrag((prev) => prev.isDragging ? { ...prev, endSlot: slot } : prev);
   }, []);
 
-  const endDrag = useCallback((): { date: string; startTime: string; endTime: string } | null => {
+  const endDrag = useCallback((): { date: string; startTime: string; endTime: string; teamConflict: boolean } | null => {
     if (!drag.startSlot || !drag.endSlot) {
       setDrag((p) => ({ ...p, isDragging: false }));
       return null;
@@ -71,7 +71,15 @@ export function useDrag(userId: string) {
     setDrag({ isDragging: false, startSlot: null, endSlot: null, currentUserId: userId });
 
     if (conflict) return null;
-    return { date: dateA, startTime, endTime };
+
+    const teamConflict = blocks.some(
+      (b) =>
+        b.userId === null &&
+        b.date === dateA &&
+        hasOverlap(startTime, endTime, b.startTime, b.endTime),
+    );
+
+    return { date: dateA, startTime, endTime, teamConflict };
   }, [drag, userId, blocks]);
 
   const cancelDrag = useCallback(() => {

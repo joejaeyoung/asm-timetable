@@ -18,7 +18,7 @@ public class ScheduleBlockResponse {
 
     public ScheduleBlockResponse(ScheduleBlock block) {
         this.id = block.getId();
-        this.userId = block.getUser().getId();
+        this.userId = block.getUser() != null ? block.getUser().getId() : null;
         this.teamId = block.getTeam().getId();
         this.date = block.getDate().toString();
         this.startTime = block.getStartTime().toString();

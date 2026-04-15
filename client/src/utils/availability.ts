@@ -24,7 +24,7 @@ export function getSharedAvailability(
 
   // 1. Filter blocks for this date (and optionally by visible member IDs)
   const dayBlocks = blocks.filter(
-    (b) => b.date === date && (!memberIds || memberIds.has(b.userId)),
+    (b) => b.date === date && (!memberIds || b.userId === null || memberIds.has(b.userId)),
   );
 
   if (dayBlocks.length === 0) {

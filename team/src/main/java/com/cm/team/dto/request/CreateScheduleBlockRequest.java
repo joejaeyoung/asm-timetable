@@ -8,8 +8,7 @@ import lombok.Getter;
 @Getter
 public class CreateScheduleBlockRequest {
 
-    @NotBlank
-    private String userId;
+    private String userId;  // null = 팀 전체 일정
 
     @NotBlank
     private String teamId;

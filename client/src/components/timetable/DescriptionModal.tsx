@@ -17,12 +17,13 @@ const DAY_LABELS: { iso: RecurrenceDayOfWeek; label: string }[] = [
 ];
 
 interface Props {
-  onConfirm: (description: string, recurrence: RecurrenceRule | null) => void;
+  onConfirm: (description: string, recurrence: RecurrenceRule | null, isTeamBlock: boolean) => void;
   onCancel: () => void;
   dateLabel: string;
   startTime: string;
   endTime: string;
   dayOfWeek: number; // JS getDay() value (0=Sun, 1=Mon, ...)
+  hasTeamConflict?: boolean;
 }
 
 export default function DescriptionModal({
@@ -32,8 +33,10 @@ export default function DescriptionModal({
   startTime,
   endTime,
   dayOfWeek,
+  hasTeamConflict = false,
 }: Props) {
   const [description, setDescription] = useState('');
+  const [isTeamBlock, setIsTeamBlock] = useState(false);
   const [isRecurring, setIsRecurring] = useState(false);
   const [selectedDays, setSelectedDays] = useState<Set<RecurrenceDayOfWeek>>(
     () => new Set([jsToIsoDay(dayOfWeek)]),
@@ -60,7 +63,7 @@ export default function DescriptionModal({
           occurrences: endCondition === 'count' ? occurrences : undefined,
         }
       : null;
-    onConfirm(description, recurrence);
+    onConfirm(description, recurrence, isTeamBlock);
   }
 
   const canConfirm = !isRecurring || (
@@ -95,8 +98,26 @@ export default function DescriptionModal({
           <p className="text-[11px] text-gray-400 text-right mt-0.5">{description.length}/100</p>
         </div>
 
-        {/* 반복 설정 */}
+        {hasTeamConflict && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-xs text-yellow-700">
+            ⚠ 팀 일정과 겹칩니다. 그래도 추가하시겠습니까?
+          </div>
+        )}
+
+        {/* 팀 일정 / 반복 설정 */}
         <div className="border-t border-gray-100 pt-3 flex flex-col gap-3">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              className="w-4 h-4 accent-blue-500"
+              checked={isTeamBlock}
+              onChange={(e) => setIsTeamBlock(e.target.checked)}
+            />
+            <span className="text-sm font-medium text-gray-700">팀 일정</span>
+          </label>
+          {isTeamBlock && (
+            <p className="text-xs text-gray-400 pl-1 -mt-1">팀원 누구나 볼 수 있는 공용 일정입니다.</p>
+          )}
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
