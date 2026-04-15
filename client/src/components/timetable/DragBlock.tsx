@@ -40,8 +40,8 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [showRecurringDeleteModal, setShowRecurringDeleteModal] = useState(false);
 
-  const isTeamBlock = block.userId === null;
-  const user = isTeamBlock ? null : allUsers.find((u) => u.id === block.userId);
+  const user = allUsers.find((u) => u.id === block.userId);
+  const isTeamBlock = user?.virtualUser ?? false;
   const color = isTeamBlock ? '#9ca3af' : (user?.color ?? '#ccc');
   const canDelete = isTeamBlock || currentUser?.id === block.userId;
 

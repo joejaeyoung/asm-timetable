@@ -11,6 +11,9 @@ export default function MemberFilterDropdown({ members, visibleIds, onChange }: 
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // 팀 일정 가상 유저를 맨 앞에 정렬
+  const sorted = [...members].sort((a, b) => (b.virtualUser ? 1 : 0) - (a.virtualUser ? 1 : 0));
+
   const allVisible = visibleIds.size === members.length;
   const isFiltered = visibleIds.size < members.length;
 
@@ -80,7 +83,7 @@ export default function MemberFilterDropdown({ members, visibleIds, onChange }: 
           </button>
 
           {/* 멤버 목록 */}
-          {members.map((member) => {
+          {sorted.map((member) => {
             const checked = visibleIds.has(member.id);
             return (
               <button

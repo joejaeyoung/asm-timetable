@@ -30,6 +30,10 @@ public class User {
     @Column(length = 7, nullable = false)
     private String color;
 
+    @Column(name = "is_team_user", nullable = false)
+    @Builder.Default
+    private boolean teamUser = false;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

@@ -141,25 +141,12 @@ class ScheduleBlockControllerTest {
         }
 
         @Test
-        @DisplayName("userId 누락 → 팀 블록 생성 → 201")
+        @DisplayName("userId 누락 → 400")
         void missingUserId() throws Exception {
-            // userId=null은 팀 전체 일정으로 처리 → 201 Created
-            Team team = Team.builder().id("team-1").name("개발팀").build();
-            ScheduleBlock teamBlock = ScheduleBlock.builder()
-                    .id("team-block-1")
-                    .user(null)
-                    .team(team)
-                    .date(LocalDate.of(2026, 4, 14))
-                    .startTime(LocalTime.of(9, 0))
-                    .endTime(LocalTime.of(11, 0))
-                    .build();
-            when(scheduleBlockService.create(any())).thenReturn(new ScheduleBlockResponse(teamBlock));
-
             mockMvc.perform(post("/api/schedule")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"teamId\":\"team-1\",\"date\":\"2026-04-14\",\"startTime\":\"09:00\",\"endTime\":\"11:00\"}"))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.id").value("team-block-1"));
+                    .andExpect(status().isBadRequest());
         }
 
         @Test
