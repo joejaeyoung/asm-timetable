@@ -53,6 +53,10 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
   const bottomY = slotToVisualY(endSlot, nightFolded);
   const height = Math.max(bottomY - topY - 2, 4);
 
+  // 짧은 블록이 위에 오도록 z-index 계산 (1슬롯=30분, 짧을수록 높은 값)
+  const durationSlots = Math.max(endSlot - startSlot, 1);
+  const blockZIndex = 10 + Math.max(0, 48 - durationSlots);
+
   function handleContextMenu(e: React.MouseEvent) {
     if (!isOwner) return;
     e.preventDefault();
@@ -79,7 +83,7 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
     <>
       {/* Visual layer — pointer-events-none so drag passes through to slot cells */}
       <div
-        className="absolute rounded px-1 overflow-hidden text-xs font-medium z-10 pointer-events-none"
+        className="absolute rounded px-1 overflow-hidden text-xs font-medium pointer-events-none"
         style={{
           top: topY,
           height,
@@ -88,6 +92,7 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
           backgroundColor: color + 'cc',
           color: '#fff',
           textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+          zIndex: blockZIndex,
         }}
       >
         <span className="truncate block leading-[20px]">{user?.name ?? '?'}</span>
@@ -113,13 +118,14 @@ export default function DragBlock({ block, colIndex, nightFolded }: Props) {
 
       {/* Interaction overlay — hover tooltip for all blocks, right-click delete for owner only */}
       <div
-        className="absolute z-20 pointer-events-auto"
+        className="absolute pointer-events-auto"
         style={{
           top: topY,
           height,
           left: `calc(${colIndex} * (100% / 7) + 1px)`,
           width: `calc(100% / 7 - 2px)`,
           cursor: isOwner ? 'context-menu' : 'default',
+          zIndex: blockZIndex + 10,
         }}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
