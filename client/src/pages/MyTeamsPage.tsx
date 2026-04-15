@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useTeamStore } from '@/store/teamStore';
+import PatchNotesCard from '@/components/PatchNotesCard';
+import { PATCH_NOTES } from '@/data/patchNotes';
 
 function defaultCalendarPath(teamId: string) {
   const now = new Date();
@@ -90,6 +92,8 @@ export default function MyTeamsPage() {
           <h1 className="text-lg font-semibold text-gray-800">내 팀</h1>
           <span className="text-sm text-gray-400">{teams.length}개 팀</span>
         </div>
+
+        <PatchNotesCard notes={PATCH_NOTES} />
 
         {/* Team list */}
         {teams.length === 0 ? (
