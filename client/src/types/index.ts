@@ -3,6 +3,7 @@ export interface User {
   name: string;
   color: string; // hex e.g. '#4A90E2'
   email: string;
+  virtualUser?: boolean; // 팀 일정 가상 유저
 }
 
 export interface Team {
@@ -22,7 +23,7 @@ export interface TeamMembership {
 
 export interface ScheduleBlock {
   id: string;
-  userId: string | null;  // null = 팀 전체 일정
+  userId: string;
   teamId: string;
   date: string;        // 'YYYY-MM-DD'
   startTime: string;   // 'HH:MM'

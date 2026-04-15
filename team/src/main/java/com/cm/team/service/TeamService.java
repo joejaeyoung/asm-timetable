@@ -55,6 +55,23 @@ public class TeamService {
                 .build();
         membershipRepository.save(ownership);
 
+        // 팀 전체 일정용 가상 유저 생성
+        User teamVirtualUser = User.builder()
+                .name("팀 일정")
+                .email("team-" + team.getId() + "@internal")
+                .color("#9ca3af")
+                .teamUser(true)
+                .build();
+        teamVirtualUser = userRepository.save(teamVirtualUser);
+
+        TeamMembership virtualMembership = TeamMembership.builder()
+                .id(new TeamMembershipId(team.getId(), teamVirtualUser.getId()))
+                .team(team)
+                .user(teamVirtualUser)
+                .role(TeamMembership.Role.member)
+                .build();
+        membershipRepository.save(virtualMembership);
+
         return new TeamResponse(team);
     }
 

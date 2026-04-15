@@ -99,7 +99,8 @@ export default function WeeklyTimetable() {
   async function handleModalConfirm(description: string, recurrence: RecurrenceRule | null, isTeamBlock: boolean) {
     if (!pendingBlock || !currentUser) return;
 
-    const userId = isTeamBlock ? null : currentUser.id;
+    const teamUser = teamMembers.find((m) => m.virtualUser);
+    const userId = isTeamBlock && teamUser ? teamUser.id : currentUser.id;
 
     if (recurrence) {
       await createRecurringBlocks({
@@ -278,7 +279,7 @@ export default function WeeklyTimetable() {
           {/* DragBlocks */}
           <div className="absolute inset-0 pointer-events-none">
             {blocks
-              .filter((block) => block.userId === null || visibleMemberIds.has(block.userId))
+              .filter((block) => visibleMemberIds.has(block.userId))
               .map((block) => {
                 const colIndex = days.findIndex((d) => formatDateStr(d) === block.date);
                 if (colIndex < 0) return null;

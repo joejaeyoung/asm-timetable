@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useScheduleStore } from '@/store/scheduleStore';
+import { useTeamStore } from '@/store/teamStore';
 
 export interface DragState {
   isDragging: boolean;
@@ -26,6 +27,7 @@ function hasOverlap(
 
 export function useDrag(userId: string) {
   const blocks = useScheduleStore((s) => s.blocks);
+  const allUsers = useTeamStore((s) => s.allUsers);
   const [drag, setDrag] = useState<DragState>({
     isDragging: false,
     startSlot: null,
@@ -74,13 +76,13 @@ export function useDrag(userId: string) {
 
     const teamConflict = blocks.some(
       (b) =>
-        b.userId === null &&
         b.date === dateA &&
+        (allUsers.find((u) => u.id === b.userId)?.virtualUser ?? false) &&
         hasOverlap(startTime, endTime, b.startTime, b.endTime),
     );
 
     return { date: dateA, startTime, endTime, teamConflict };
-  }, [drag, userId, blocks]);
+  }, [drag, userId, blocks, allUsers]);
 
   const cancelDrag = useCallback(() => {
     setDrag({ isDragging: false, startSlot: null, endSlot: null, currentUserId: userId });
